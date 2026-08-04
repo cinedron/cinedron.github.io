@@ -1,38 +1,33 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="ko">
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
-  <base href="/">
-
-  <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
-
-  <!-- iOS meta tags & icons -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="cinespider_caalculator">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
-
-  <title>cinespider_caalculator</title>
-  <link rel="manifest" href="manifest.json">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f6f7f9">
+  <meta name="description" content="Cinedron 팀 웹 도구 모음">
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'self'; form-action 'none'">
+  <title>Cinedron 도구</title>
+  <link rel="stylesheet" href="/site.css">
+  <script src="/site.js" defer></script>
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+  <main class="container">
+    <header>
+      <h1>Cinedron 도구</h1>
+      <p>사용할 웹프로그램을 선택하세요.</p>
+    </header>
+
+    <section class="app-list" aria-label="웹프로그램 목록">
+      <a class="app-button" href="/apps/cinespider/">
+        <img src="/apps/cinespider/icons/Icon-192.png" alt="" width="72" height="72">
+        <span class="app-text">
+          <strong>시네스파이더 계산기</strong>
+          <small>좌표 변환 및 회전 계산</small>
+        </span>
+        <span class="chevron" aria-hidden="true">›</span>
+      </a>
+    </section>
+  </main>
 </body>
 </html>
