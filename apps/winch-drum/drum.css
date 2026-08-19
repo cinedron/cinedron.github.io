@@ -114,18 +114,6 @@
   box-shadow: 0 0 0 3px rgba(87, 215, 255, 0.15);
 }
 
-.layer-section {
-  padding: 6rem 0 1rem;
-}
-
-.layer-table-wrap {
-  margin-top: 2rem;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 1.25rem;
-  background: var(--surface);
-}
-
 .term-grid {
   margin-top: 2.4rem;
   display: grid;

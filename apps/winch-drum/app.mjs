@@ -1,11 +1,9 @@
-import { calculateDrumCapacity } from "./calculation.mjs?v=20260819-drum1";
+import { calculateDrumCapacity } from "./calculation.mjs?v=20260820-single1";
 
 const form = document.querySelector("#drum-form");
 const errorMessage = document.querySelector("#drum-error");
 const emptyState = document.querySelector("#drum-empty");
 const resultContent = document.querySelector("#drum-result");
-const layerSection = document.querySelector("#layer-section");
-const layerTableBody = document.querySelector("#layer-table-body");
 const assessment = document.querySelector("#drum-assessment");
 const assessmentTitle = document.querySelector("#drum-assessment-title");
 const assessmentCopy = document.querySelector("#drum-assessment-copy");
@@ -38,44 +36,15 @@ function readValues() {
   return {
     ropeDiameter: Number(data.get("ropeDiameter")),
     coreDiameter: Number(data.get("coreDiameter")),
-    flangeDiameter: Number(data.get("flangeDiameter")),
     drumWidth: Number(data.get("drumWidth")),
+    windingPitch: Number(data.get("windingPitch")),
     freeboard: Number(data.get("freeboard")),
     deadWraps: Number(data.get("deadWraps")),
     planningEfficiency: Number(data.get("planningEfficiency")) / 100,
     requiredLength: Number(data.get("requiredLength")),
     leadDistance: Number(data.get("leadDistance")),
-    drumType: String(data.get("drumType")),
-    firstLayerLinePull: Number(data.get("firstLayerLinePull"))
+    drumType: String(data.get("drumType"))
   };
-}
-
-function appendCell(row, text) {
-  const cell = document.createElement("td");
-  cell.textContent = text;
-  row.append(cell);
-}
-
-function renderLayers(result) {
-  layerTableBody.replaceChildren();
-  for (const layer of result.layers) {
-    const row = document.createElement("tr");
-    const layerCell = document.createElement("th");
-    layerCell.scope = "row";
-    layerCell.textContent = `${layer.layer}층`;
-    row.append(layerCell);
-    appendCell(row, `${oneDecimal.format(layer.centerlineDiameter)} mm`);
-    appendCell(row, `${twoDecimals.format(layer.layerLength)} m`);
-    appendCell(row, `${twoDecimals.format(layer.cumulativeLength)} m`);
-    appendCell(row, `${oneDecimal.format(layer.linePullRatio * 100)}%`);
-    appendCell(
-      row,
-      layer.estimatedLinePull === null
-        ? "입력 없음"
-        : `${oneDecimal.format(layer.estimatedLinePull)} kgf`
-    );
-    layerTableBody.append(row);
-  }
 }
 
 function updateAssessment(result, values) {
@@ -108,7 +77,7 @@ function updateAssessment(result, values) {
     values.requiredLength <= 0
       ? "비교 길이 없음"
       : result.targetFits
-        ? `수용 가능 · ${result.requiredLayers}층 필요`
+        ? `수용 가능 · 폭 ${oneDecimal.format(result.widthDifference)}mm 여유`
         : `${oneDecimal.format(Math.abs(result.targetDifference))}m 부족`
   );
 }
@@ -124,17 +93,17 @@ function render() {
   setOutput("fleetAngleMaximumDeg", oneDecimal.format(result.fleetAngleMaximumDeg));
   setOutput("totalStorageCapacity", oneDecimal.format(result.totalStorageCapacity));
   setOutput("totalWorkingCapacity", oneDecimal.format(result.totalWorkingCapacity));
-  setOutput("maximumLayers", wholeNumber.format(result.maximumLayers));
-  setOutput("wrapsPerLayer", wholeNumber.format(result.wrapsPerLayer));
+  setOutput("totalWraps", wholeNumber.format(result.totalWraps));
+  setOutput("usableWraps", wholeNumber.format(result.usableWraps));
+  setOutput("requiredDrumWidth", oneDecimal.format(result.requiredDrumWidth));
+  setOutput("minimumFlangeDiameter", oneDecimal.format(result.minimumFlangeDiameter));
   setOutput("minimumLeadDistance", wholeNumber.format(result.recommendedMinimumLeadDistance));
   setOutput("maximumLeadDistance", wholeNumber.format(result.recommendedMaximumLeadDistance));
   setOutput("ddRatio", oneDecimal.format(result.ddRatio));
   updateAssessment(result, values);
-  renderLayers(result);
   errorMessage.hidden = true;
   emptyState.hidden = true;
   resultContent.hidden = false;
-  layerSection.hidden = false;
   hasCalculated = true;
 }
 
@@ -171,6 +140,5 @@ form.addEventListener("reset", () => {
     errorMessage.textContent = "입력값을 확인해 주세요.";
     resultContent.hidden = true;
     emptyState.hidden = false;
-    layerSection.hidden = true;
   });
 });

@@ -12,36 +12,33 @@ function assertNonnegativeFinite(value, label) {
   }
 }
 
-function helixLengthPerWrap(centerlineDiameter, pitch) {
-  return Math.hypot(Math.PI * centerlineDiameter, pitch);
-}
-
 export function calculateDrumCapacity(input) {
   const {
     ropeDiameter,
     coreDiameter,
-    flangeDiameter,
     drumWidth,
+    windingPitch,
     freeboard,
     deadWraps,
     planningEfficiency,
     requiredLength,
     leadDistance,
-    drumType,
-    firstLayerLinePull
+    drumType
   } = input;
 
   assertPositiveFinite(ropeDiameter, "와이어 직경");
   assertPositiveFinite(coreDiameter, "드럼 코어 직경");
-  assertPositiveFinite(flangeDiameter, "플랜지 직경");
   assertPositiveFinite(drumWidth, "드럼 유효 폭");
+  assertPositiveFinite(windingPitch, "권취 피치");
   assertNonnegativeFinite(freeboard, "프리보드");
   assertNonnegativeFinite(deadWraps, "잔여 권수");
   assertPositiveFinite(planningEfficiency, "계획 사용률");
   assertNonnegativeFinite(requiredLength, "필요 와이어 길이");
   assertPositiveFinite(leadDistance, "첫 고정 도르래 거리");
-  assertNonnegativeFinite(firstLayerLinePull, "1층 정격 라인풀");
 
+  if (windingPitch + EPSILON < ropeDiameter) {
+    throw new RangeError("권취 피치는 와이어 직경보다 작을 수 없습니다.");
+  }
   if (planningEfficiency > 1) {
     throw new RangeError("계획 사용률은 100% 이하여야 합니다.");
   }
@@ -52,56 +49,30 @@ export function calculateDrumCapacity(input) {
     throw new RangeError("드럼 종류를 확인해 주세요.");
   }
 
-  const effectiveFlangeDiameter = flangeDiameter - freeboard * 2;
-  const maximumLayers = Math.floor(
-    (effectiveFlangeDiameter - coreDiameter) / (ropeDiameter * 2) + EPSILON
-  );
-  const wrapsPerLayer = Math.floor(drumWidth / ropeDiameter + EPSILON);
-  if (maximumLayers < 1) {
-    throw new RangeError("프리보드를 제외한 플랜지 높이에 와이어 한 층도 들어가지 않습니다.");
+  const totalWraps = Math.floor(drumWidth / windingPitch + EPSILON);
+  if (totalWraps < 1) {
+    throw new RangeError("드럼 유효 폭에 와이어 한 바퀴도 배치할 수 없습니다.");
   }
-  if (wrapsPerLayer < 1) {
-    throw new RangeError("드럼 유효 폭이 와이어 직경보다 작습니다.");
-  }
-  if (deadWraps >= wrapsPerLayer) {
-    throw new RangeError("잔여 권수는 첫 층 전체 권수보다 작아야 합니다.");
+  if (deadWraps >= totalWraps) {
+    throw new RangeError("잔여 권수는 단층 전체 권수보다 작아야 합니다.");
   }
 
-  let cumulativeLengthMm = 0;
-  const layers = [];
-  for (let layer = 1; layer <= maximumLayers; layer += 1) {
-    const centerlineDiameter = coreDiameter + ropeDiameter * (2 * layer - 1);
-    const lengthPerWrap = helixLengthPerWrap(centerlineDiameter, ropeDiameter);
-    const layerLengthMm = wrapsPerLayer * lengthPerWrap;
-    cumulativeLengthMm += layerLengthMm;
-    const linePullRatio = (coreDiameter + ropeDiameter) / centerlineDiameter;
-    layers.push(Object.freeze({
-      layer,
-      centerlineDiameter,
-      wraps: wrapsPerLayer,
-      layerLength: layerLengthMm / 1000,
-      cumulativeLength: cumulativeLengthMm / 1000,
-      linePullRatio,
-      estimatedLinePull: firstLayerLinePull > 0 ? firstLayerLinePull * linePullRatio : null
-    }));
-  }
-
-  const firstLayerWrapLengthMm = helixLengthPerWrap(
-    coreDiameter + ropeDiameter,
-    ropeDiameter
-  );
-  const deadWrapLength = deadWraps * firstLayerWrapLengthMm / 1000;
-  const totalStorageCapacity = cumulativeLengthMm / 1000;
-  const totalWorkingCapacity = Math.max(0, totalStorageCapacity - deadWrapLength);
+  const centerlineDiameter = coreDiameter + ropeDiameter;
+  const lengthPerWrap = Math.hypot(Math.PI * centerlineDiameter, windingPitch) / 1000;
+  const usableWraps = totalWraps - deadWraps;
+  const totalStorageCapacity = totalWraps * lengthPerWrap;
+  const deadWrapLength = deadWraps * lengthPerWrap;
+  const totalWorkingCapacity = usableWraps * lengthPerWrap;
   const planningCapacity = totalWorkingCapacity * planningEfficiency;
   const targetFits = requiredLength <= planningCapacity + EPSILON;
   const targetDifference = planningCapacity - requiredLength;
-  const requiredStorageLength = requiredLength / planningEfficiency + deadWrapLength;
-  let requiredLayers = 0;
-  if (requiredLength > EPSILON) {
-    requiredLayers = layers.find((layer) => layer.cumulativeLength + EPSILON >= requiredStorageLength)?.layer
-      ?? maximumLayers + 1;
-  }
+  const requiredUsableWraps = requiredLength > EPSILON
+    ? Math.ceil(requiredLength / (lengthPerWrap * planningEfficiency) - EPSILON)
+    : 0;
+  const requiredTotalWraps = requiredUsableWraps + deadWraps;
+  const requiredDrumWidth = requiredTotalWraps * windingPitch;
+  const widthDifference = drumWidth - requiredDrumWidth;
+  const minimumFlangeDiameter = coreDiameter + ropeDiameter * 2 + freeboard * 2;
 
   const fleetAngleDeg = Math.atan((drumWidth / 2) / leadDistance) * 180 / Math.PI;
   const fleetAngleMinimumDeg = 0.5;
@@ -113,19 +84,23 @@ export function calculateDrumCapacity(input) {
   const fleetAngleWithinMaximum = fleetAngleDeg <= fleetAngleMaximumDeg + EPSILON;
   const fleetAngleWithinRecommendedRange =
     fleetAngleDeg >= fleetAngleMinimumDeg - EPSILON && fleetAngleWithinMaximum;
-  const ddRatio = coreDiameter / ropeDiameter;
 
   return Object.freeze({
-    effectiveFlangeDiameter,
-    maximumLayers,
-    wrapsPerLayer,
+    centerlineDiameter,
+    lengthPerWrap,
+    totalWraps,
+    usableWraps,
     totalStorageCapacity,
     deadWrapLength,
     totalWorkingCapacity,
     planningCapacity,
     targetFits,
     targetDifference,
-    requiredLayers,
+    requiredUsableWraps,
+    requiredTotalWraps,
+    requiredDrumWidth,
+    widthDifference,
+    minimumFlangeDiameter,
     fleetAngleDeg,
     fleetAngleMinimumDeg,
     fleetAngleMaximumDeg,
@@ -133,7 +108,6 @@ export function calculateDrumCapacity(input) {
     fleetAngleWithinRecommendedRange,
     recommendedMinimumLeadDistance,
     recommendedMaximumLeadDistance,
-    ddRatio,
-    layers: Object.freeze(layers)
+    ddRatio: coreDiameter / ropeDiameter
   });
 }
