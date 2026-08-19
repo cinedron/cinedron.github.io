@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071018">
+  <meta name="description" content="설치 공간을 기준으로 CineSpider의 와이어 길이와 참고 이동 높이를 계산합니다.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; font-src 'self'; connect-src 'none'; base-uri 'self'; form-action 'none'">
+  <title>CineSpider 설치 계산기</title>
+  <link rel="stylesheet" href="/apps/cinespider-install/calculator.css">
+  <script type="module" src="/apps/cinespider-install/app.mjs"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="back-link" href="/" aria-label="Cinedron 도구 목록으로 돌아가기">
+      <span aria-hidden="true">←</span>
+      <span>도구 목록</span>
+    </a>
+    <span class="wordmark">CINEDRON</span>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="page-title">
+      <div class="hero-copy">
+        <p class="eyebrow">CINESPIDER · INSTALLATION REFERENCE</p>
+        <h1 id="page-title">설치 공간에 필요한<br>와이어 길이를 빠르게 확인하세요.</h1>
+        <p class="hero-description">
+          직사각형 공간의 네 모서리에 같은 높이로 도르래를 설치하고,
+          각 윈치를 해당 도르래 바로 아래에 배치하는 4축 구성을 가정합니다.
+        </p>
+        <div class="reference-badge">
+          <span aria-hidden="true">i</span>
+          설치 검토용 참고 계산
+        </div>
+      </div>
+
+      <div class="rig-diagram" aria-hidden="true">
+        <div class="diagram-frame">
+          <span class="anchor anchor--one"></span>
+          <span class="anchor anchor--two"></span>
+          <span class="anchor anchor--three"></span>
+          <span class="anchor anchor--four"></span>
+          <span class="cable cable--one"></span>
+          <span class="cable cable--two"></span>
+          <span class="cable cable--three"></span>
+          <span class="cable cable--four"></span>
+          <span class="diagram-payload"></span>
+        </div>
+        <div class="diagram-label diagram-label--height">도르래 높이 H</div>
+        <div class="diagram-label diagram-label--area">설치 공간 W × L</div>
+      </div>
+    </section>
+
+    <section class="calculator-shell" aria-label="CineSpider 설치 계산">
+      <form class="input-panel" id="installation-form" novalidate>
+        <div class="panel-heading">
+          <p class="step-label">01 · INPUT</p>
+          <h2>설치 조건</h2>
+          <p>모든 값은 페이로드 중심을 기준으로 입력하세요.</p>
+        </div>
+
+        <div class="field-grid">
+          <label class="field" for="space-width">
+            <span class="field-label">공간 가로</span>
+            <span class="input-wrap">
+              <input id="space-width" name="width" type="number" min="0.5" max="1000" step="0.1" inputmode="decimal" placeholder="예: 20" required>
+              <span class="unit">m</span>
+            </span>
+          </label>
+
+          <label class="field" for="space-length">
+            <span class="field-label">공간 세로</span>
+            <span class="input-wrap">
+              <input id="space-length" name="length" type="number" min="0.5" max="1000" step="0.1" inputmode="decimal" placeholder="예: 30" required>
+              <span class="unit">m</span>
+            </span>
+          </label>
+
+          <label class="field" for="pulley-height">
+            <span class="field-label">도르래 설치 높이</span>
+            <span class="input-wrap">
+              <input id="pulley-height" name="pulleyHeight" type="number" min="0.5" max="300" step="0.1" inputmode="decimal" placeholder="예: 15" required>
+              <span class="unit">m</span>
+            </span>
+          </label>
+
+          <label class="field" for="payload-mass">
+            <span class="field-label">중앙 페이로드 무게</span>
+            <span class="input-wrap">
+              <input id="payload-mass" name="payloadMass" type="number" min="0.1" max="1000" step="0.1" inputmode="decimal" placeholder="예: 25" required>
+              <span class="unit">kg</span>
+            </span>
+          </label>
+        </div>
+
+        <p class="form-error" id="form-error" role="alert" hidden>입력값을 확인해 주세요.</p>
+
+        <div class="form-actions">
+          <button class="calculate-button" type="submit">계산하기</button>
+          <button class="reset-button" type="reset">초기화</button>
+        </div>
+      </form>
+
+      <section class="result-panel" aria-labelledby="result-title">
+        <div class="panel-heading">
+          <p class="step-label">02 · RESULT</p>
+          <h2 id="result-title">계산 결과</h2>
+          <p>표시값은 소수점 첫째 자리 기준입니다.</p>
+        </div>
+
+        <div class="result-empty" id="result-empty">
+          <span class="empty-mark" aria-hidden="true">＋</span>
+          <p>설치 조건을 입력하면<br>참고 결과가 여기에 표시됩니다.</p>
+        </div>
+
+        <div class="result-content" id="result-content" aria-live="polite" hidden>
+          <article class="primary-result primary-result--cable">
+            <p>윈치 1축 권장 준비 길이</p>
+            <strong><span data-output="planningCableLength">-</span><small>m</small></strong>
+            <span>이론상 최소 <b data-output="minimumCableLength">-</b>m + 계획 여유 10%</span>
+          </article>
+
+          <article class="primary-result primary-result--height">
+            <p>참고 최대 이동 높이</p>
+            <strong><span data-output="recommendedMaxHeight">-</span><small>m</small></strong>
+            <span>도르래 높이의 <b data-output="heightPercentage">-</b>% · <b data-output="heightLimiter">-</b></span>
+          </article>
+
+          <dl class="metric-list">
+            <div>
+              <dt>도르래→페이로드 최대 직선거리</dt>
+              <dd><span data-output="maxFreeSpan">-</span> m</dd>
+            </div>
+            <div>
+              <dt>바닥 평면 대각선</dt>
+              <dd><span data-output="floorDiagonal">-</span> m</dd>
+            </div>
+            <div>
+              <dt>상단 기준 중앙 케이블 각도</dt>
+              <dd><span data-output="selectedAngleDeg">-</span>°</dd>
+            </div>
+            <div>
+              <dt>1가닥 최소 정적 장력 상당값</dt>
+              <dd><span data-output="staticTensionKgF">-</span> kgf <small>(<span data-output="staticTensionN">-</span> N)</small></dd>
+            </div>
+          </dl>
+
+          <div class="assessment" id="height-assessment">
+            <strong id="assessment-title"></strong>
+            <p id="assessment-copy"></p>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section class="method-section" aria-labelledby="method-title">
+      <div class="method-intro">
+        <p class="step-label">03 · METHOD</p>
+        <h2 id="method-title">75%를 그대로 사용하지 않는 이유</h2>
+        <p>
+          케이블 로봇의 실제 작업영역은 공간 크기뿐 아니라 케이블 장력 범위,
+          프리텐션, 강성, 동적 하중과 위치에 따라 달라집니다. 따라서 도르래 높이의
+          일정 비율만으로 안전한 작업영역을 확정할 수 없습니다.
+        </p>
+      </div>
+
+      <div class="method-cards">
+        <article>
+          <span>HEIGHT</span>
+          <h3>두 기준 중 낮은 값</h3>
+          <p>
+            기존 75% 상한과 중앙 케이블의 수평 기준 각도 30°를 동시에 적용합니다.
+            30°는 법정 안전기준이 아니라 장력 증가를 억제하기 위한 보수적 계획 기준입니다.
+          </p>
+        </article>
+        <article>
+          <span>CABLE</span>
+          <h3>가장 먼 위치 기준</h3>
+          <p>
+            윈치에서 바로 위 도르래까지의 길이와, 해당 도르래에서 반대편 바닥 모서리까지의
+            공간 대각선을 합산한 뒤 10% 계획 여유를 더합니다.
+          </p>
+        </article>
+        <article>
+          <span>LOAD</span>
+          <h3>무게는 장력 참고값으로</h3>
+          <p>
+            모델별 허용 장력을 입력하지 않으므로 페이로드 무게로 실제 허용 높이를 단정하지 않습니다.
+            대신 중앙 정지 상태에서 중력을 지지하는 데 필요한 최소 장력 상당값을 표시합니다.
+          </p>
+        </article>
+      </div>
+
+      <p class="research-note">
+        케이블 구동 시스템의 유효 작업영역이 장력 제한과 동역학에 좌우된다는 점은
+        <a href="https://www.mdpi.com/2076-3417/12/1/244" target="_blank" rel="noopener noreferrer">wrench-feasible workspace 연구</a>와
+        <a href="https://www.mdpi.com/2076-3417/14/15/6478" target="_blank" rel="noopener noreferrer">장력 분배 연구</a>에서도 다뤄집니다.
+      </p>
+    </section>
+
+    <aside class="safety-note" aria-labelledby="safety-title">
+      <div class="safety-icon" aria-hidden="true">!</div>
+      <div>
+        <h2 id="safety-title">이 결과는 설치 승인이나 안전 인증을 대신하지 않습니다.</h2>
+        <p>
+          케이블 자중·탄성·마찰·처짐, 드럼 유효 권취량과 잔여 권수, 종단 처리,
+          프리텐션, 가속·감속, 바람, 앵커 강도 및 장비별 WLL/SWL은 포함하지 않습니다.
+          실제 설치 전에는 현장 측량값과 장비 사양으로 담당 엔지니어가 다시 검토해야 합니다.
+        </p>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    <span>CINEDRON</span>
+    <p>CineSpider installation reference calculator</p>
+  </footer>
+</body>
+</html>

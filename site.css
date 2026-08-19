@@ -79,6 +79,47 @@ header p {
   border-radius: 1rem;
 }
 
+.app-icon {
+  position: relative;
+  width: 4.5rem;
+  height: 4.5rem;
+  display: block;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: #0d2533;
+}
+
+.app-icon--install::before,
+.app-icon--install::after {
+  position: absolute;
+  inset: 0.75rem;
+  content: "";
+  background:
+    linear-gradient(32deg, transparent 48%, rgba(87, 215, 255, 0.75) 49%, rgba(87, 215, 255, 0.75) 51%, transparent 52%),
+    linear-gradient(-32deg, transparent 48%, rgba(87, 215, 255, 0.75) 49%, rgba(87, 215, 255, 0.75) 51%, transparent 52%);
+}
+
+.app-icon--install::after {
+  inset: 0.62rem;
+  border: 2px solid #57d7ff;
+  border-radius: 0.45rem;
+  background: none;
+}
+
+.app-icon--install span {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 56%;
+  width: 0.9rem;
+  height: 0.9rem;
+  border: 2px solid #0d2533;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 0 2px #57d7ff;
+  transform: translate(-50%, -50%);
+}
+
 .app-text {
   min-width: 0;
   display: grid;
