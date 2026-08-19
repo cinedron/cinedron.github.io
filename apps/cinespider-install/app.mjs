@@ -103,6 +103,7 @@ function updateHeightAssessment(result) {
 }
 
 function configurePointInputs(result) {
+  if (!pointFieldset || !pointX || !pointY || !pointZ) return;
   const halfWidth = result.width / 2;
   const halfLength = result.length / 2;
   const maximumZ = Math.max(0, result.pulleyHeight - 0.01);
@@ -121,7 +122,7 @@ function configurePointInputs(result) {
 }
 
 function useCenterReferencePosition() {
-  if (!currentInstallation) return;
+  if (!currentInstallation || !pointX || !pointY || !pointZ) return;
   pointX.value = "0";
   pointY.value = "0";
   pointZ.value = currentInstallation.referenceHeight75.toFixed(2);
@@ -151,6 +152,13 @@ function renderInstallationResult() {
     oneDecimal.format(result.staticTensionAt75KgF)
   );
   setOutput(outputs, "staticTensionAt75N", wholeNumber.format(result.staticTensionAt75N));
+  // Temporary compatibility for a cached first-version HTML document.
+  setOutput(outputs, "recommendedMaxHeight", oneDecimal.format(result.referenceHeight75));
+  setOutput(outputs, "heightPercentage", "75.0");
+  setOutput(outputs, "heightLimiter", "75% 참고값");
+  setOutput(outputs, "selectedAngleDeg", oneDecimal.format(result.referenceAngle75Deg));
+  setOutput(outputs, "staticTensionKgF", oneDecimal.format(result.staticTensionAt75KgF));
+  setOutput(outputs, "staticTensionN", wholeNumber.format(result.staticTensionAt75N));
 
   updateHeightAssessment(result);
   configurePointInputs(result);
@@ -158,7 +166,7 @@ function renderInstallationResult() {
   emptyState.hidden = true;
   resultContent.hidden = false;
   hasCalculatedInstallation = true;
-  useCenterReferencePosition();
+  if (pointForm) useCenterReferencePosition();
 }
 
 function updatePointAssessment(analysis) {
@@ -271,7 +279,7 @@ function cableColor(tensionN, minimumTensionN, maximumTensionN) {
 }
 
 function drawSimulation() {
-  if (!currentInstallation || !currentPointAnalysis) return;
+  if (!currentInstallation || !currentPointAnalysis || !simulationCanvas) return;
   const context = simulationCanvas.getContext("2d");
   if (!context) return;
 
@@ -429,47 +437,51 @@ installationForm.addEventListener("reset", () => {
     installationError.textContent = "입력값을 확인해 주세요.";
     resultContent.hidden = true;
     emptyState.hidden = false;
-    pointFieldset.disabled = true;
-    simulationContent.hidden = true;
-    simulationEmpty.hidden = false;
+    if (pointFieldset) pointFieldset.disabled = true;
+    if (simulationContent) simulationContent.hidden = true;
+    if (simulationEmpty) simulationEmpty.hidden = false;
   });
 });
 
-pointForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  if (!pointForm.checkValidity()) {
-    pointError.hidden = false;
-    pointForm.reportValidity();
-    return;
-  }
+if (pointForm) {
+  pointForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!pointForm.checkValidity()) {
+      pointError.hidden = false;
+      pointForm.reportValidity();
+      return;
+    }
 
-  try {
-    renderPointAnalysis();
-  } catch (error) {
-    pointError.textContent =
-      error instanceof Error ? error.message : "좌표를 확인해 주세요.";
-    pointError.hidden = false;
-  }
-});
-
-pointForm.addEventListener("input", () => {
-  pointError.hidden = true;
-  if (hasCalculatedPoint && pointForm.checkValidity()) {
     try {
       renderPointAnalysis();
-    } catch {
-      // Keep the last valid simulation while a user is editing an incomplete value.
+    } catch (error) {
+      pointError.textContent =
+        error instanceof Error ? error.message : "좌표를 확인해 주세요.";
+      pointError.hidden = false;
     }
-  }
-});
+  });
 
-centerPositionButton.addEventListener("click", useCenterReferencePosition);
+  pointForm.addEventListener("input", () => {
+    pointError.hidden = true;
+    if (hasCalculatedPoint && pointForm.checkValidity()) {
+      try {
+        renderPointAnalysis();
+      } catch {
+        // Keep the last valid simulation while a user is editing an incomplete value.
+      }
+    }
+  });
+}
 
-if ("ResizeObserver" in window) {
+if (centerPositionButton) {
+  centerPositionButton.addEventListener("click", useCenterReferencePosition);
+}
+
+if (simulationCanvas && "ResizeObserver" in window) {
   new ResizeObserver(() => {
     if (currentPointAnalysis) window.requestAnimationFrame(drawSimulation);
   }).observe(simulationCanvas);
-} else {
+} else if (simulationCanvas) {
   window.addEventListener("resize", () => {
     if (currentPointAnalysis) window.requestAnimationFrame(drawSimulation);
   });
