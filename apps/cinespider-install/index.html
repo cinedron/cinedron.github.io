@@ -24,7 +24,7 @@
     <section class="hero" aria-labelledby="page-title">
       <div class="hero-copy">
         <p class="eyebrow">CINESPIDER · INSTALLATION REFERENCE</p>
-        <h1 id="page-title">설치 공간에 필요한<br>와이어 길이를 빠르게 확인하세요.</h1>
+        <h1 id="page-title">운용 가능 공간<br>확인하기</h1>
         <p class="hero-description">
           직사각형 공간의 네 모서리에 같은 높이로 도르래를 설치하고,
           각 윈치를 해당 도르래 바로 아래에 배치하는 4축 구성을 가정합니다.
@@ -122,9 +122,9 @@
           </article>
 
           <article class="primary-result primary-result--height">
-            <p>참고 최대 이동 높이</p>
-            <strong><span data-output="recommendedMaxHeight">-</span><small>m</small></strong>
-            <span>도르래 높이의 <b data-output="heightPercentage">-</b>% · <b data-output="heightLimiter">-</b></span>
+            <p>75% 기준 참고 높이</p>
+            <strong><span data-output="referenceHeight75">-</span><small>m</small></strong>
+            <span>운용 최대치가 아닌 초기 검토용 높이 · 중앙 각도 <b data-output="referenceAngle75Deg">-</b>°</span>
           </article>
 
           <dl class="metric-list">
@@ -137,12 +137,12 @@
               <dd><span data-output="floorDiagonal">-</span> m</dd>
             </div>
             <div>
-              <dt>상단 기준 중앙 케이블 각도</dt>
-              <dd><span data-output="selectedAngleDeg">-</span>°</dd>
+              <dt>30° 비교선의 중앙 높이</dt>
+              <dd><span data-output="conservativeHeight30">-</span></dd>
             </div>
             <div>
-              <dt>1가닥 최소 정적 장력 상당값</dt>
-              <dd><span data-output="staticTensionKgF">-</span> kgf <small>(<span data-output="staticTensionN">-</span> N)</small></dd>
+              <dt>75% 중앙 위치의 1가닥 균등 정적 분배값</dt>
+              <dd><span data-output="staticTensionAt75KgF">-</span> kgf <small>(<span data-output="staticTensionAt75N">-</span> N)</small></dd>
             </div>
           </dl>
 
@@ -154,40 +154,162 @@
       </section>
     </section>
 
+    <section class="point-section" aria-labelledby="point-title">
+      <div class="point-intro">
+        <p class="step-label">03 · VIRTUAL POSITION</p>
+        <h2 id="point-title">가상 페이로드 위치 분석</h2>
+        <p>
+          설치 공간의 중심을 X=0, Y=0으로 두고 바닥 기준 높이 Z를 지정합니다.
+          위치별 케이블 길이·각도와 중력만 고려한 정적 평형 장력 참고값을 계산합니다.
+        </p>
+      </div>
+
+      <form class="point-form" id="point-form" novalidate>
+        <fieldset id="point-fieldset" disabled>
+          <legend class="visually-hidden">가상 페이로드 좌표</legend>
+          <div class="coordinate-grid">
+            <label class="field" for="point-x">
+              <span class="field-label">X 위치 <small id="x-range">설치 조건 계산 후 입력 가능</small></span>
+              <span class="input-wrap">
+                <input id="point-x" name="x" type="number" step="0.1" inputmode="decimal" value="0" required>
+                <span class="unit">m</span>
+              </span>
+            </label>
+
+            <label class="field" for="point-y">
+              <span class="field-label">Y 위치 <small id="y-range">설치 조건 계산 후 입력 가능</small></span>
+              <span class="input-wrap">
+                <input id="point-y" name="y" type="number" step="0.1" inputmode="decimal" value="0" required>
+                <span class="unit">m</span>
+              </span>
+            </label>
+
+            <label class="field" for="point-z">
+              <span class="field-label">페이로드 중심 높이 Z <small id="z-range">바닥 기준</small></span>
+              <span class="input-wrap">
+                <input id="point-z" name="z" type="number" min="0" step="0.1" inputmode="decimal" required>
+                <span class="unit">m</span>
+              </span>
+            </label>
+          </div>
+
+          <p class="coordinate-help">
+            X는 좌↔우, Y는 전↔후, Z는 바닥↔도르래 방향입니다. 페이로드의 크기와 회전은 포함하지 않습니다.
+          </p>
+          <p class="form-error" id="point-error" role="alert" hidden>좌표를 확인해 주세요.</p>
+
+          <div class="form-actions form-actions--point">
+            <button class="calculate-button" type="submit">이 위치 분석하기</button>
+            <button class="reset-button" id="center-position-button" type="button">중앙 75% 위치</button>
+          </div>
+        </fieldset>
+      </form>
+    </section>
+
+    <section class="simulation-section" aria-labelledby="simulation-title">
+      <div class="simulation-heading">
+        <p class="step-label">04 · SIMULATION</p>
+        <h2 id="simulation-title">위치 시뮬레이션</h2>
+        <p>선 색상은 네 케이블 사이의 상대적인 정적 평형 장력을 나타냅니다.</p>
+      </div>
+
+      <div class="simulation-empty" id="simulation-empty">
+        <span aria-hidden="true">◇</span>
+        <p>먼저 설치 조건을 계산하면 중앙 75% 위치가 표시됩니다.</p>
+      </div>
+
+      <div class="simulation-content" id="simulation-content" hidden>
+        <div class="simulation-grid">
+          <figure class="simulation-figure">
+            <canvas id="simulation-canvas" role="img" aria-label="네 개 도르래와 가상 페이로드 위치를 나타내는 입체 도식"></canvas>
+            <figcaption>
+              개념도는 케이블 처짐과 페이로드 자세를 생략한 직선 기하 표현입니다.
+            </figcaption>
+          </figure>
+
+          <div class="position-summary">
+            <div>
+              <span>가상 위치</span>
+              <strong>X <b data-point-output="x">-</b> · Y <b data-point-output="y">-</b> · Z <b data-point-output="z">-</b> m</strong>
+            </div>
+            <dl>
+              <div>
+                <dt>가장 낮은 케이블 각도</dt>
+                <dd><span data-point-output="minimumCableAngleDeg">-</span>°</dd>
+              </div>
+              <div>
+                <dt>가장 큰 최소노름 장력값</dt>
+                <dd><span data-point-output="maximumTensionKgF">-</span> kgf</dd>
+              </div>
+              <div>
+                <dt>장력 분포 최대/최소 비</dt>
+                <dd><span data-point-output="tensionSpreadRatio">-</span></dd>
+              </div>
+            </dl>
+            <div class="assessment" id="point-assessment">
+              <strong id="point-assessment-title"></strong>
+              <p id="point-assessment-copy"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="cable-table-wrap">
+          <table class="cable-table">
+            <caption>케이블별 가상 위치 결과</caption>
+            <thead>
+              <tr>
+                <th scope="col">축</th>
+                <th scope="col">도르래→페이로드</th>
+                <th scope="col">총 사용 길이</th>
+                <th scope="col">수평 기준 각도</th>
+                <th scope="col">최소노름 정적 장력</th>
+              </tr>
+            </thead>
+            <tbody id="cable-table-body"></tbody>
+          </table>
+        </div>
+
+        <p class="simulation-disclaimer">
+          4케이블·3축의 장력 해는 일반적으로 하나로 정해지지 않습니다. 표시값은 비음수 해 중
+          장력 제곱합을 최소화한 참고 분배이며, 실제 프리텐션과 제어기 배분값이 아닙니다.
+        </p>
+      </div>
+    </section>
+
     <section class="method-section" aria-labelledby="method-title">
       <div class="method-intro">
-        <p class="step-label">03 · METHOD</p>
-        <h2 id="method-title">75%를 그대로 사용하지 않는 이유</h2>
+        <p class="step-label">05 · METHOD</p>
+        <h2 id="method-title">75%와 30°를 분리해서 보는 이유</h2>
         <p>
           케이블 로봇의 실제 작업영역은 공간 크기뿐 아니라 케이블 장력 범위,
           프리텐션, 강성, 동적 하중과 위치에 따라 달라집니다. 따라서 도르래 높이의
-          일정 비율만으로 안전한 작업영역을 확정할 수 없습니다.
+          일정 비율이나 케이블 각도 하나로 안전한 작업영역을 확정할 수 없습니다.
         </p>
       </div>
 
       <div class="method-cards">
         <article>
           <span>HEIGHT</span>
-          <h3>두 기준 중 낮은 값</h3>
+          <h3>75%는 참고 위치</h3>
           <p>
-            기존 75% 상한과 중앙 케이블의 수평 기준 각도 30°를 동시에 적용합니다.
-            30°는 법정 안전기준이 아니라 장력 증가를 억제하기 위한 보수적 계획 기준입니다.
+            기존 75%는 초기 검토 위치로 표시합니다. 실제 최대 운용 높이는 장비별 허용 장력,
+            프리텐션과 동적 안전계수가 있어야 판단할 수 있습니다.
           </p>
         </article>
         <article>
-          <span>CABLE</span>
-          <h3>가장 먼 위치 기준</h3>
+          <span>ANGLE</span>
+          <h3>30°는 비교선</h3>
           <p>
-            윈치에서 바로 위 도르래까지의 길이와, 해당 도르래에서 반대편 바닥 모서리까지의
-            공간 대각선을 합산한 뒤 10% 계획 여유를 더합니다.
+            각도는 케이블과 수평면 사이의 각으로 0°에 가까울수록 같은 무게를 지지하는 데
+            더 큰 장력이 필요합니다. 30°는 안전규정이 아니라 차이를 보여주기 위한 보수적 비교선입니다.
           </p>
         </article>
         <article>
           <span>LOAD</span>
-          <h3>무게는 장력 참고값으로</h3>
+          <h3>위치별 장력은 하나가 아님</h3>
           <p>
-            모델별 허용 장력을 입력하지 않으므로 페이로드 무게로 실제 허용 높이를 단정하지 않습니다.
-            대신 중앙 정지 상태에서 중력을 지지하는 데 필요한 최소 장력 상당값을 표시합니다.
+            네 케이블의 장력 배분은 프리텐션과 제어 방식에 따라 여러 해가 가능합니다.
+            시뮬레이션에는 비교 가능한 하나의 최소노름 정적 평형해만 표시합니다.
           </p>
         </article>
       </div>
@@ -195,7 +317,7 @@
       <p class="research-note">
         케이블 구동 시스템의 유효 작업영역이 장력 제한과 동역학에 좌우된다는 점은
         <a href="https://www.mdpi.com/2076-3417/12/1/244" target="_blank" rel="noopener noreferrer">wrench-feasible workspace 연구</a>와
-        <a href="https://www.mdpi.com/2076-3417/14/15/6478" target="_blank" rel="noopener noreferrer">장력 분배 연구</a>에서도 다뤄집니다.
+        <a href="https://doi.org/10.1016/j.mechmachtheory.2023.105551" target="_blank" rel="noopener noreferrer">4케이블 정적 작업영역 연구</a>에서도 다뤄집니다.
       </p>
     </section>
 
