@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071018">
+  <meta name="description" content="와이어 직경과 드럼 형상으로 권취 용량, 층수, 플리트 각도를 계산합니다.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; font-src 'self'; connect-src 'none'; base-uri 'self'; form-action 'none'">
+  <title>윈치 드럼 용량 계산기</title>
+  <link rel="stylesheet" href="/apps/cinespider-install/calculator.css">
+  <link rel="stylesheet" href="/apps/winch-drum/drum.css">
+  <script type="module" src="/apps/winch-drum/app.mjs?v=20260819-drum1"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="back-link" href="/" aria-label="Cinedron 도구 목록으로 돌아가기">
+      <span aria-hidden="true">←</span>
+      <span>도구 목록</span>
+    </a>
+    <span class="wordmark">CINEDRON</span>
+  </header>
+
+  <main>
+    <section class="hero drum-hero" aria-labelledby="page-title">
+      <div class="hero-copy">
+        <p class="eyebrow">WINCH · DRUM REFERENCE</p>
+        <h1 id="page-title">드럼 용량과<br>플리트 각도 확인하기</h1>
+        <p class="hero-description">
+          와이어와 드럼의 실제 치수를 입력해 층별 권취 길이, 잔여 권수를 제외한 계획 용량,
+          첫 고정 도르래까지 필요한 거리를 확인합니다.
+        </p>
+        <div class="reference-badge"><span aria-hidden="true">i</span>기하·권취 계획용 참고 계산</div>
+      </div>
+
+      <div class="drum-diagram" aria-hidden="true">
+        <div class="drum-flange drum-flange--left"></div>
+        <div class="drum-core"></div>
+        <div class="drum-rope"></div>
+        <div class="drum-flange drum-flange--right"></div>
+        <div class="lead-line"></div>
+        <div class="lead-sheave"></div>
+        <span>DRUM → FIXED SHEAVE</span>
+      </div>
+    </section>
+
+    <section class="calculator-shell" aria-label="윈치 드럼 계산">
+      <form class="input-panel" id="drum-form" novalidate>
+        <div class="panel-heading">
+          <p class="step-label">01 · INPUT</p>
+          <h2>드럼과 와이어 조건</h2>
+          <p>치수는 모두 같은 단위계인 mm로 입력하세요.</p>
+        </div>
+
+        <div class="field-grid drum-field-grid">
+          <label class="field" for="rope-diameter">
+            <span class="field-label">와이어 직경</span>
+            <span class="input-wrap"><input id="rope-diameter" name="ropeDiameter" type="number" min="0.1" step="0.1" inputmode="decimal" placeholder="예: 4" required><span class="unit">mm</span></span>
+          </label>
+          <label class="field" for="core-diameter">
+            <span class="field-label">드럼 코어 직경</span>
+            <span class="input-wrap"><input id="core-diameter" name="coreDiameter" type="number" min="1" step="0.1" inputmode="decimal" placeholder="예: 100" required><span class="unit">mm</span></span>
+          </label>
+          <label class="field" for="flange-diameter">
+            <span class="field-label">플랜지 외경</span>
+            <span class="input-wrap"><input id="flange-diameter" name="flangeDiameter" type="number" min="1" step="0.1" inputmode="decimal" placeholder="예: 220" required><span class="unit">mm</span></span>
+          </label>
+          <label class="field" for="drum-width">
+            <span class="field-label">드럼 유효 폭</span>
+            <span class="input-wrap"><input id="drum-width" name="drumWidth" type="number" min="1" step="0.1" inputmode="decimal" placeholder="예: 180" required><span class="unit">mm</span></span>
+          </label>
+          <label class="field" for="freeboard">
+            <span class="field-label">프리보드 <small>반경 방향 여유</small></span>
+            <span class="input-wrap"><input id="freeboard" name="freeboard" type="number" min="0" step="0.1" inputmode="decimal" value="12.7" required><span class="unit">mm</span></span>
+          </label>
+          <label class="field" for="dead-wraps">
+            <span class="field-label">드럼 잔여 권수</span>
+            <span class="input-wrap"><input id="dead-wraps" name="deadWraps" type="number" min="0" step="1" inputmode="numeric" value="3" required><span class="unit">회</span></span>
+          </label>
+          <label class="field" for="planning-efficiency">
+            <span class="field-label">계획 사용률 <small>불완전 권취 여유</small></span>
+            <span class="input-wrap"><input id="planning-efficiency" name="planningEfficiency" type="number" min="1" max="100" step="1" inputmode="decimal" value="80" required><span class="unit">%</span></span>
+          </label>
+          <label class="field" for="required-length">
+            <span class="field-label">필요 와이어 길이</span>
+            <span class="input-wrap"><input id="required-length" name="requiredLength" type="number" min="0" step="0.1" inputmode="decimal" placeholder="예: 45" required><span class="unit">m</span></span>
+          </label>
+          <label class="field" for="lead-distance">
+            <span class="field-label">첫 고정 도르래 거리 <small>드럼 중심 기준</small></span>
+            <span class="input-wrap"><input id="lead-distance" name="leadDistance" type="number" min="1" step="1" inputmode="decimal" placeholder="예: 3500" required><span class="unit">mm</span></span>
+          </label>
+          <label class="field" for="drum-type">
+            <span class="field-label">드럼 종류</span>
+            <span class="select-wrap">
+              <select id="drum-type" name="drumType" required>
+                <option value="smooth">평드럼</option>
+                <option value="grooved">홈드럼</option>
+              </select>
+            </span>
+          </label>
+          <label class="field" for="first-layer-line-pull">
+            <span class="field-label">1층 정격 라인풀 <small>선택 입력</small></span>
+            <span class="input-wrap"><input id="first-layer-line-pull" name="firstLayerLinePull" type="number" min="0" step="0.1" inputmode="decimal" value="0"><span class="unit">kgf</span></span>
+          </label>
+        </div>
+
+        <p class="coordinate-help">
+          기본 프리보드 12.7mm, 잔여 3권, 계획 사용률 80%는 제조사 안내를 참고한 시작값일 뿐입니다.
+          실제 장비 매뉴얼과 적용 규정을 우선하세요.
+        </p>
+        <p class="form-error" id="drum-error" role="alert" hidden>입력값을 확인해 주세요.</p>
+        <div class="form-actions">
+          <button class="calculate-button" type="submit">드럼 계산하기</button>
+          <button class="reset-button" type="reset">초기화</button>
+        </div>
+      </form>
+
+      <section class="result-panel" aria-labelledby="result-title">
+        <div class="panel-heading">
+          <p class="step-label">02 · RESULT</p>
+          <h2 id="result-title">계산 결과</h2>
+          <p>이론상 고르게 밀착 권취되는 형상을 기준으로 합니다.</p>
+        </div>
+        <div class="result-empty" id="drum-empty">
+          <span class="empty-mark" aria-hidden="true">＋</span>
+          <p>드럼 조건을 입력하면<br>권취 용량과 배치 결과가 표시됩니다.</p>
+        </div>
+        <div class="result-content" id="drum-result" aria-live="polite" hidden>
+          <article class="primary-result primary-result--cable">
+            <p>계획 권취 용량</p>
+            <strong><span data-output="planningCapacity">-</span><small>m</small></strong>
+            <span>잔여 권수 제외 후 계획 사용률 <b data-output="planningEfficiency">-</b>% 적용</span>
+          </article>
+          <article class="primary-result">
+            <p>최대 플리트 각도</p>
+            <strong><span data-output="fleetAngleDeg">-</span><small>°</small></strong>
+            <span><b data-output="drumTypeLabel">-</b> 참고범위 <b data-output="fleetAngleMinimumDeg">-</b>–<b data-output="fleetAngleMaximumDeg">-</b>°</span>
+          </article>
+          <dl class="metric-list">
+            <div><dt>전체 저장 용량</dt><dd><span data-output="totalStorageCapacity">-</span> m</dd></div>
+            <div><dt>잔여 권수 제외 작업 용량</dt><dd><span data-output="totalWorkingCapacity">-</span> m</dd></div>
+            <div><dt>최대 층수 / 층당 권수</dt><dd><span data-output="maximumLayers">-</span>층 / <span data-output="wrapsPerLayer">-</span>회</dd></div>
+            <div><dt>필요 길이 수용 결과</dt><dd><span data-output="targetResult">-</span></dd></div>
+            <div><dt>참고 도르래 거리 범위</dt><dd><span data-output="minimumLeadDistance">-</span>–<span data-output="maximumLeadDistance">-</span> mm</dd></div>
+            <div><dt>코어 D/d 비</dt><dd><span data-output="ddRatio">-</span></dd></div>
+          </dl>
+          <div class="assessment" id="drum-assessment"><strong id="drum-assessment-title"></strong><p id="drum-assessment-copy"></p></div>
+        </div>
+      </section>
+    </section>
+
+    <section class="layer-section" id="layer-section" aria-labelledby="layer-title" hidden>
+      <div class="simulation-heading">
+        <p class="step-label">03 · LAYERS</p>
+        <h2 id="layer-title">층별 권취 결과</h2>
+        <p>층이 쌓이면 유효 반경이 커지므로 같은 드럼 토크에서 라인풀은 감소합니다.</p>
+      </div>
+      <div class="cable-table-wrap layer-table-wrap">
+        <table class="cable-table">
+          <caption>드럼 층별 계산값</caption>
+          <thead><tr><th scope="col">층</th><th scope="col">와이어 중심 직경</th><th scope="col">해당 층 길이</th><th scope="col">누적 길이</th><th scope="col">1층 대비 라인풀</th><th scope="col">추정 라인풀</th></tr></thead>
+          <tbody id="layer-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="method-section terminology-section" aria-labelledby="terms-title">
+      <div class="method-intro">
+        <p class="step-label">04 · TERMS</p>
+        <h2 id="terms-title">계산에 쓰이는 용어</h2>
+        <p>비슷해 보이지만 지정 주체와 적용 범위가 다릅니다. 인증서·장비 명판·현장 검토 문서의 값을 우선하세요.</p>
+      </div>
+      <div class="term-grid">
+        <article><span>WLL</span><h3>Working Load Limit</h3><p>제품이 일반적인 지정 조건에서 들어 올리거나 지지하도록 설계·승인된 최대 하중입니다. 보통 제조사 또는 공급자가 정합니다.</p></article>
+        <article><span>SWL</span><h3>Safe Working Load</h3><p>설치 형상, 환경, 사용 방법을 반영해 유자격자가 특정 적용 현장에 정한 최대 허용 하중입니다. WLL보다 낮아질 수 있습니다.</p></article>
+        <article><span>MBS / MBL</span><h3>Minimum Breaking Strength / Load</h3><p>규정된 시험에서 보장하는 최소 파단 강도 또는 하중입니다. 정상 운용 하중으로 사용하면 안 됩니다.</p></article>
+        <article><span>DESIGN FACTOR</span><h3>설계계수</h3><p>일반적으로 최소 파단하중을 WLL 또는 정격 하중과 비교한 비율입니다. 재료·용도·규정에 따라 필요한 값이 다릅니다.</p></article>
+        <article><span>SAFETY FACTOR</span><h3>적용 안전율</h3><p>예상되는 최대 운용 하중과 허용 한계 사이에 두는 여유입니다. 설계계수와 혼용되기도 하므로 적용 규정의 정의를 확인해야 합니다.</p></article>
+        <article><span>RATED LINE PULL</span><h3>정격 라인풀</h3><p>윈치가 특정 드럼 층과 조건에서 낼 수 있도록 정격화된 와이어 당김력입니다. 층이 쌓일수록 유효 반경이 커져 감소합니다.</p></article>
+        <article><span>PRETENSION</span><h3>프리텐션</h3><p>운동 전 케이블이 느슨해지지 않도록 미리 부여하는 초기 장력입니다. 페이로드 무게와는 별도의 제어 조건입니다.</p></article>
+        <article><span>DYNAMIC LOAD</span><h3>동적 하중</h3><p>가속·감속, 급정지, 충격, 흔들림으로 정적 무게 외에 추가되는 하중입니다. 순간값은 정적 계산보다 훨씬 커질 수 있습니다.</p></article>
+        <article><span>FLEET ANGLE</span><h3>플리트 각도</h3><p>첫 고정 도르래 중심선에서 드럼 중심과 가장자리 권취 위치로 향하는 선 사이의 최대 편향각입니다.</p></article>
+        <article><span>DEAD WRAPS</span><h3>드럼 잔여 권수</h3><p>와이어가 풀려도 드럼에 반드시 남겨 앵커 고정을 보조하는 권수입니다. 제조사 지시값을 사용해야 합니다.</p></article>
+        <article><span>FREEBOARD</span><h3>프리보드</h3><p>최상단 와이어 층과 플랜지 바깥 가장자리 사이에 남기는 반경 방향 여유입니다.</p></article>
+      </div>
+      <p class="research-note">
+        용어 정의는 <a href="https://leeaint.com/faqs" target="_blank" rel="noopener noreferrer">LEEA의 WLL·SWL 안내</a>,
+        권취 용량·잔여 권수·프리보드·플리트 각도는 <a href="https://liftingsolutions.ingersollrand.com/en/resources/winch-selection-support/drum-capacity-definitions/" target="_blank" rel="noopener noreferrer">Ingersoll Rand 드럼 용량 정의</a>를 참고했습니다.
+      </p>
+    </section>
+
+    <aside class="safety-note" aria-labelledby="safety-title">
+      <div class="safety-icon" aria-hidden="true">!</div>
+      <div><h2 id="safety-title">이 결과는 윈치 선정, WLL/SWL 결정 또는 리깅 승인을 대신하지 않습니다.</h2><p>실제 용량은 홈 피치, 레벨와인드, 와이어 구조와 압착, 종단 처리, 마찰, 변형 및 제조 공차에 따라 달라집니다. 와이어·드럼·브레이크·감속기·도르래·앵커 중 가장 낮은 허용값과 제조사 매뉴얼을 적용하세요.</p></div>
+    </aside>
+  </main>
+
+  <footer><span>CINEDRON</span><p>Winch drum capacity reference calculator</p></footer>
+</body>
+</html>

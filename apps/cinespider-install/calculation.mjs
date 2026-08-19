@@ -120,6 +120,86 @@ function minimumNormNonnegativeTensions(unitVectors, loadVector) {
   return tensions;
 }
 
+function boundedTensionSolution(unitVectors, loadVector, minimumTension, maximumTension) {
+  const gram = Array.from({ length: 3 }, (_, row) =>
+    Array.from({ length: 3 }, (_, column) =>
+      unitVectors.reduce((sum, vector) => sum + vector[row] * vector[column], 0)
+    )
+  );
+  const dual = solve3x3(gram, loadVector);
+  if (!dual) return null;
+
+  const base = unitVectors.map((vector) => dot(vector, dual));
+  const nullVector = Array.from({ length: 4 }, (_, omittedColumn) => {
+    const remainingVectors = unitVectors.filter((_, column) => column !== omittedColumn);
+    const submatrix = Array.from({ length: 3 }, (_, row) =>
+      remainingVectors.map((vector) => vector[row])
+    );
+    return (omittedColumn % 2 === 0 ? 1 : -1) * determinant3(submatrix);
+  });
+  const nullNorm = Math.hypot(...nullVector);
+  if (nullNorm < EPSILON) return null;
+  const direction = nullVector.map((value) => value / nullNorm);
+
+  let lower = Number.NEGATIVE_INFINITY;
+  let upper = Number.POSITIVE_INFINITY;
+  for (let index = 0; index < 4; index += 1) {
+    if (Math.abs(direction[index]) < EPSILON) {
+      if (base[index] < minimumTension - EPSILON || base[index] > maximumTension + EPSILON) {
+        return null;
+      }
+      continue;
+    }
+
+    const first = (minimumTension - base[index]) / direction[index];
+    const second = (maximumTension - base[index]) / direction[index];
+    lower = Math.max(lower, Math.min(first, second));
+    upper = Math.min(upper, Math.max(first, second));
+  }
+
+  if (lower > upper + EPSILON) return null;
+  const lambda = Math.min(Math.max(0, lower), upper);
+  const tensions = base.map((value, index) =>
+    Math.min(maximumTension, Math.max(minimumTension, value + lambda * direction[index]))
+  );
+  const residual = [0, 1, 2].map((row) =>
+    unitVectors.reduce(
+      (sum, vector, column) => sum + vector[row] * tensions[column],
+      0
+    ) - loadVector[row]
+  );
+
+  if (Math.hypot(...residual) > 1e-5) return null;
+  return Object.freeze({
+    tensions: Object.freeze(tensions),
+    lambdaRange: Object.freeze({ minimum: lower, maximum: upper })
+  });
+}
+
+function createGeometry(installation, point) {
+  const { width, length, pulleyHeight, planningCableLength } = installation;
+  const anchors = [
+    { id: 1, label: "좌측 전면", x: -width / 2, y: -length / 2, z: pulleyHeight },
+    { id: 2, label: "우측 전면", x: width / 2, y: -length / 2, z: pulleyHeight },
+    { id: 3, label: "우측 후면", x: width / 2, y: length / 2, z: pulleyHeight },
+    { id: 4, label: "좌측 후면", x: -width / 2, y: length / 2, z: pulleyHeight }
+  ];
+
+  return anchors.map((anchor) => {
+    const vector = [anchor.x - point.x, anchor.y - point.y, anchor.z - point.z];
+    const freeSpan = Math.hypot(...vector);
+    return {
+      ...anchor,
+      vector,
+      unitVector: vector.map((value) => value / freeSpan),
+      freeSpan,
+      totalUsedLength: pulleyHeight + freeSpan,
+      remainingPlanningLength: planningCableLength - pulleyHeight - freeSpan,
+      cableAngleDeg: Math.asin((pulleyHeight - point.z) / freeSpan) * 180 / Math.PI
+    };
+  });
+}
+
 export function calculateInstallation({ width, length, pulleyHeight, payloadMass }) {
   assertPositiveFinite(width, "가로");
   assertPositiveFinite(length, "세로");
@@ -180,26 +260,7 @@ export function calculatePointAnalysis(installation, point) {
     throw new RangeError("Z는 0m 이상, 도르래 높이보다 최소 0.01m 낮아야 합니다.");
   }
 
-  const anchors = [
-    { id: 1, label: "좌측 전면", x: -width / 2, y: -length / 2, z: pulleyHeight },
-    { id: 2, label: "우측 전면", x: width / 2, y: -length / 2, z: pulleyHeight },
-    { id: 3, label: "우측 후면", x: width / 2, y: length / 2, z: pulleyHeight },
-    { id: 4, label: "좌측 후면", x: -width / 2, y: length / 2, z: pulleyHeight }
-  ];
-
-  const geometry = anchors.map((anchor) => {
-    const vector = [anchor.x - x, anchor.y - y, anchor.z - z];
-    const freeSpan = Math.hypot(...vector);
-    return {
-      ...anchor,
-      vector,
-      unitVector: vector.map((value) => value / freeSpan),
-      freeSpan,
-      totalUsedLength: pulleyHeight + freeSpan,
-      remainingPlanningLength: planningCableLength - pulleyHeight - freeSpan,
-      cableAngleDeg: Math.asin((pulleyHeight - z) / freeSpan) * 180 / Math.PI
-    };
-  });
+  const geometry = createGeometry(installation, point);
 
   const loadN = payloadMass * CRITERIA.gravity;
   const tensionsN = minimumNormNonnegativeTensions(
@@ -237,5 +298,103 @@ export function calculatePointAnalysis(installation, point) {
       minimumTensionN < maximumTensionN * 0.05,
     positionHeightPercent: z / pulleyHeight * 100,
     isCenterPosition: Math.abs(x) < EPSILON && Math.abs(y) < EPSILON
+  });
+}
+
+export function calculateWorkspaceMap(installation, options) {
+  const {
+    z,
+    minimumTensionKgF,
+    maximumTensionKgF,
+    horizontalAcceleration = 0,
+    verticalAcceleration = 0,
+    gridResolution = 31
+  } = options;
+  const { width, length, pulleyHeight, payloadMass, planningCableLength } = installation;
+
+  assertFinite(z, "맵 높이");
+  assertPositiveFinite(maximumTensionKgF, "운용 장력 상한");
+  assertFinite(minimumTensionKgF, "최소 유지 장력");
+  assertFinite(horizontalAcceleration, "수평 가속도");
+  assertFinite(verticalAcceleration, "수직 가속도");
+  if (minimumTensionKgF < 0 || minimumTensionKgF >= maximumTensionKgF) {
+    throw new RangeError("최소 유지 장력은 0 이상이며 운용 장력 상한보다 작아야 합니다.");
+  }
+  if (horizontalAcceleration < 0 || verticalAcceleration < 0) {
+    throw new RangeError("검토 가속도는 0 이상이어야 합니다.");
+  }
+  if (z < 0 || z >= pulleyHeight - 0.01) {
+    throw new RangeError("맵 높이는 바닥 이상, 도르래보다 최소 0.01m 낮아야 합니다.");
+  }
+
+  const resolution = Math.max(11, Math.min(61, Math.round(gridResolution)));
+  const minimumTensionN = minimumTensionKgF * CRITERIA.gravity;
+  const maximumTensionN = maximumTensionKgF * CRITERIA.gravity;
+  const mass = payloadMass;
+  const staticLoad = [0, 0, mass * CRITERIA.gravity];
+  const loadCases = [];
+  const verticalDirections = verticalAcceleration > EPSILON ? [-1, 1] : [0];
+
+  if (horizontalAcceleration > EPSILON) {
+    for (const verticalDirection of verticalDirections) {
+      for (let index = 0; index < 16; index += 1) {
+        const angle = index * Math.PI / 8;
+        loadCases.push([
+          mass * horizontalAcceleration * Math.cos(angle),
+          mass * horizontalAcceleration * Math.sin(angle),
+          mass * (CRITERIA.gravity + verticalDirection * verticalAcceleration)
+        ]);
+      }
+    }
+  } else if (verticalAcceleration > EPSILON) {
+    for (const verticalDirection of verticalDirections) {
+      loadCases.push([0, 0, mass * (CRITERIA.gravity + verticalDirection * verticalAcceleration)]);
+    }
+  } else {
+    loadCases.push(staticLoad);
+  }
+
+  const cells = [];
+  let staticFeasibleCount = 0;
+  let operatingFeasibleCount = 0;
+  for (let row = 0; row < resolution; row += 1) {
+    const y = length / 2 - row / (resolution - 1) * length;
+    for (let column = 0; column < resolution; column += 1) {
+      const x = -width / 2 + column / (resolution - 1) * width;
+      const point = { x, y, z };
+      const geometry = createGeometry(installation, point);
+      const unitVectors = geometry.map((cable) => cable.unitVector);
+      const wireAvailable = geometry.every(
+        (cable) => cable.totalUsedLength <= planningCableLength + EPSILON
+      );
+      const staticSolution = wireAvailable
+        ? boundedTensionSolution(unitVectors, staticLoad, minimumTensionN, maximumTensionN)
+        : null;
+      const staticFeasible = Boolean(staticSolution);
+      const operatingFeasible = staticFeasible && loadCases.every((load) =>
+        Boolean(boundedTensionSolution(unitVectors, load, minimumTensionN, maximumTensionN))
+      );
+      if (staticFeasible) staticFeasibleCount += 1;
+      if (operatingFeasible) operatingFeasibleCount += 1;
+      cells.push(Object.freeze({
+        x,
+        y,
+        status: operatingFeasible ? "operating" : staticFeasible ? "static-only" : "unavailable"
+      }));
+    }
+  }
+
+  const totalCellCount = cells.length;
+  return Object.freeze({
+    z,
+    resolution,
+    minimumTensionKgF,
+    maximumTensionKgF,
+    horizontalAcceleration,
+    verticalAcceleration,
+    loadCaseCount: loadCases.length,
+    staticFeasiblePercent: staticFeasibleCount / totalCellCount * 100,
+    operatingFeasiblePercent: operatingFeasibleCount / totalCellCount * 100,
+    cells: Object.freeze(cells)
   });
 }

@@ -9,7 +9,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; font-src 'self'; connect-src 'none'; base-uri 'self'; form-action 'none'">
   <title>CineSpider 설치 계산기</title>
   <link rel="stylesheet" href="/apps/cinespider-install/calculator.css">
-  <script type="module" src="/apps/cinespider-install/app.mjs?v=20260819-angle1"></script>
+  <script type="module" src="/apps/cinespider-install/app.mjs?v=20260819-workspace1"></script>
 </head>
 <body>
   <header class="topbar">
@@ -276,9 +276,108 @@
       </div>
     </section>
 
+    <section class="workspace-section" aria-labelledby="workspace-title">
+      <div class="workspace-heading">
+        <p class="step-label">05 · WORKSPACE MAP</p>
+        <h2 id="workspace-title">운용 가능 공간 맵</h2>
+        <p>
+          선택한 높이에서 네 케이블 모두가 입력한 최소·최대 장력 범위 안에 머무를 수 있는지
+          정적 평형식으로 검사합니다. 가속도를 입력하면 수평 16방향과 수직 상·하 조합도 함께 샘플링합니다.
+        </p>
+      </div>
+
+      <form class="workspace-form" id="workspace-form" novalidate>
+        <fieldset id="workspace-fieldset" disabled>
+          <legend class="visually-hidden">운용 가능 공간 맵 조건</legend>
+          <div class="workspace-controls">
+            <label class="field" for="workspace-z">
+              <span class="field-label">검토 높이 Z <small>바닥 기준</small></span>
+              <span class="input-wrap">
+                <input id="workspace-z" name="z" type="number" min="0" step="0.1" inputmode="decimal" required>
+                <span class="unit">m</span>
+              </span>
+            </label>
+
+            <label class="field" for="minimum-tension">
+              <span class="field-label">최소 유지 장력 <small>가닥당</small></span>
+              <span class="input-wrap">
+                <input id="minimum-tension" name="minimumTensionKgF" type="number" min="0" max="100000" step="0.1" inputmode="decimal" value="2" required>
+                <span class="unit">kgf</span>
+              </span>
+            </label>
+
+            <label class="field" for="maximum-tension">
+              <span class="field-label">운용 장력 상한 <small>가닥당</small></span>
+              <span class="input-wrap">
+                <input id="maximum-tension" name="maximumTensionKgF" type="number" min="0.1" max="100000" step="0.1" inputmode="decimal" value="80" required>
+                <span class="unit">kgf</span>
+              </span>
+            </label>
+
+            <label class="field" for="horizontal-acceleration">
+              <span class="field-label">수평 검토 가속도 <small>16방향</small></span>
+              <span class="input-wrap">
+                <input id="horizontal-acceleration" name="horizontalAcceleration" type="number" min="0" max="20" step="0.1" inputmode="decimal" value="0" required>
+                <span class="unit">m/s²</span>
+              </span>
+            </label>
+
+            <label class="field" for="vertical-acceleration">
+              <span class="field-label">수직 검토 가속도 <small>상·하</small></span>
+              <span class="input-wrap">
+                <input id="vertical-acceleration" name="verticalAcceleration" type="number" min="0" max="9.8" step="0.1" inputmode="decimal" value="0" required>
+                <span class="unit">m/s²</span>
+              </span>
+            </label>
+          </div>
+
+          <p class="coordinate-help">
+            운용 장력 상한에는 케이블 WLL, 현장 SWL, 윈치 정격 라인풀, 앵커·도르래 허용값 중 가장 작은 값을 사용하세요.
+            기본 2/80kgf는 화면 확인용 예시이며 CineSpider 사양값이 아닙니다.
+          </p>
+          <p class="form-error" id="workspace-error" role="alert" hidden>맵 조건을 확인해 주세요.</p>
+          <div class="form-actions form-actions--point">
+            <button class="calculate-button" type="submit">공간 맵 계산하기</button>
+            <button class="reset-button" id="use-point-height-button" type="button">현재 위치 Z 사용</button>
+          </div>
+        </fieldset>
+      </form>
+
+      <div class="workspace-empty" id="workspace-empty">
+        <span aria-hidden="true">▦</span>
+        <p>설치 조건을 계산하면 높이별 운용 가능 영역을 확인할 수 있습니다.</p>
+      </div>
+
+      <div class="workspace-content" id="workspace-content" hidden>
+        <div class="workspace-map-grid">
+          <figure class="workspace-figure">
+            <canvas id="workspace-canvas" role="img" aria-label="선택한 높이에서 장력 조건별 운용 가능 영역을 나타내는 평면 지도"></canvas>
+            <figcaption>맵을 누르면 해당 X·Y 위치가 위의 위치 시뮬레이션에 적용됩니다.</figcaption>
+          </figure>
+          <aside class="workspace-summary">
+            <div class="map-legend" aria-label="공간 맵 범례">
+              <span><i class="map-key map-key--operating"></i>입력한 모든 조건에서 해 존재</span>
+              <span><i class="map-key map-key--static"></i>정적 조건에서만 해 존재</span>
+              <span><i class="map-key map-key--unavailable"></i>정적 해 또는 와이어 길이 부족</span>
+            </div>
+            <dl>
+              <div><dt>검토 높이</dt><dd><span data-workspace-output="z">-</span> m</dd></div>
+              <div><dt>정적 평형 가능 표본</dt><dd><span data-workspace-output="staticFeasiblePercent">-</span>%</dd></div>
+              <div><dt>가속도 포함 가능 표본</dt><dd><span data-workspace-output="operatingFeasiblePercent">-</span>%</dd></div>
+              <div><dt>검토 하중 조합</dt><dd><span data-workspace-output="loadCaseCount">-</span>개</dd></div>
+            </dl>
+            <div class="assessment assessment--caution">
+              <strong>색상은 안전 판정이 아니라 입력 조건의 평형해 존재 여부입니다.</strong>
+              <p>그리드 사이의 연속성, 케이블 처짐·탄성·마찰, 페이로드 회전과 제어 오차는 포함하지 않습니다.</p>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
     <section class="method-section" aria-labelledby="method-title">
       <div class="method-intro">
-        <p class="step-label">05 · METHOD</p>
+        <p class="step-label">06 · METHOD</p>
         <h2 id="method-title">천장면 기준 각도와 장력의 관계</h2>
         <p>
           케이블 로봇의 실제 작업영역은 공간 크기뿐 아니라 케이블 장력 범위,

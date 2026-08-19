@@ -120,6 +120,45 @@ header p {
   transform: translate(-50%, -50%);
 }
 
+.app-icon--drum::before {
+  position: absolute;
+  left: 0.8rem;
+  right: 0.8rem;
+  top: 50%;
+  height: 1.9rem;
+  content: "";
+  border-top: 2px solid #57d7ff;
+  border-bottom: 2px solid #57d7ff;
+  background: repeating-linear-gradient(90deg, rgba(87, 215, 255, 0.2) 0 4px, rgba(87, 215, 255, 0.65) 4px 6px);
+  transform: translateY(-50%);
+}
+
+.app-icon--drum::after {
+  position: absolute;
+  left: 0.55rem;
+  top: 50%;
+  width: 0.6rem;
+  height: 3.25rem;
+  content: "";
+  border: 2px solid #57d7ff;
+  border-radius: 50%;
+  background: #0d2533;
+  box-shadow: 2.72rem 0 0 -2px #0d2533, 2.72rem 0 0 0 #57d7ff;
+  transform: translateY(-50%);
+}
+
+.app-icon--drum span {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 50%;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: #ffffff;
+  transform: translate(-50%, -50%);
+}
+
 .app-text {
   min-width: 0;
   display: grid;

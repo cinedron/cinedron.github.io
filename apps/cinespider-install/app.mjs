@@ -1,8 +1,9 @@
 import {
   calculateInstallation,
   calculatePointAnalysis,
+  calculateWorkspaceMap,
   CRITERIA
-} from "./calculation.mjs?v=20260819-angle1";
+} from "./calculation.mjs?v=20260819-workspace1";
 
 const installationForm = document.querySelector("#installation-form");
 const installationError = document.querySelector("#form-error");
@@ -28,6 +29,14 @@ const cableTableBody = document.querySelector("#cable-table-body");
 const pointAssessment = document.querySelector("#point-assessment");
 const pointAssessmentTitle = document.querySelector("#point-assessment-title");
 const pointAssessmentCopy = document.querySelector("#point-assessment-copy");
+const workspaceForm = document.querySelector("#workspace-form");
+const workspaceFieldset = document.querySelector("#workspace-fieldset");
+const workspaceError = document.querySelector("#workspace-error");
+const workspaceZ = document.querySelector("#workspace-z");
+const usePointHeightButton = document.querySelector("#use-point-height-button");
+const workspaceEmpty = document.querySelector("#workspace-empty");
+const workspaceContent = document.querySelector("#workspace-content");
+const workspaceCanvas = document.querySelector("#workspace-canvas");
 
 const outputs = new Map(
   Array.from(document.querySelectorAll("[data-output]"), (element) => [
@@ -38,6 +47,12 @@ const outputs = new Map(
 const pointOutputs = new Map(
   Array.from(document.querySelectorAll("[data-point-output]"), (element) => [
     element.dataset.pointOutput,
+    element
+  ])
+);
+const workspaceOutputs = new Map(
+  Array.from(document.querySelectorAll("[data-workspace-output]"), (element) => [
+    element.dataset.workspaceOutput,
     element
   ])
 );
@@ -56,6 +71,7 @@ const wholeNumber = new Intl.NumberFormat("ko-KR", {
 
 let currentInstallation = null;
 let currentPointAnalysis = null;
+let currentWorkspaceMap = null;
 let hasCalculatedInstallation = false;
 let hasCalculatedPoint = false;
 
@@ -75,6 +91,17 @@ function readPointValues() {
     x: Number(data.get("x")),
     y: Number(data.get("y")),
     z: Number(data.get("z"))
+  };
+}
+
+function readWorkspaceValues() {
+  const data = new FormData(workspaceForm);
+  return {
+    z: Number(data.get("z")),
+    minimumTensionKgF: Number(data.get("minimumTensionKgF")),
+    maximumTensionKgF: Number(data.get("maximumTensionKgF")),
+    horizontalAcceleration: Number(data.get("horizontalAcceleration")),
+    verticalAcceleration: Number(data.get("verticalAcceleration"))
   };
 }
 
@@ -110,6 +137,13 @@ function configurePointInputs(result) {
   yRange.textContent = `${oneDecimal.format(-halfLength)} ~ ${oneDecimal.format(halfLength)}m`;
   zRange.textContent = `0 ~ ${oneDecimal.format(maximumZ)}m · 바닥 기준`;
   pointFieldset.disabled = false;
+
+  if (workspaceFieldset && workspaceZ) {
+    workspaceZ.min = "0";
+    workspaceZ.max = String(maximumZ);
+    workspaceZ.value = result.referenceHeight75.toFixed(2);
+    workspaceFieldset.disabled = false;
+  }
 }
 
 function useCenterReferencePosition() {
@@ -157,6 +191,7 @@ function renderInstallationResult() {
   resultContent.hidden = false;
   hasCalculatedInstallation = true;
   if (pointForm) useCenterReferencePosition();
+  if (currentWorkspaceMap && workspaceForm?.checkValidity()) renderWorkspaceMap();
 }
 
 function updatePointAssessment(analysis) {
@@ -356,6 +391,88 @@ function drawSimulation() {
   );
 }
 
+function workspaceColor(status) {
+  if (status === "operating") return "#39bd8b";
+  if (status === "static-only") return "#d89d3c";
+  return "#263c48";
+}
+
+function drawWorkspaceMap() {
+  if (!currentInstallation || !currentWorkspaceMap || !workspaceCanvas) return;
+  const context = workspaceCanvas.getContext("2d");
+  if (!context) return;
+
+  const rect = workspaceCanvas.getBoundingClientRect();
+  const width = Math.max(280, rect.width);
+  const height = Math.max(220, rect.height);
+  const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+  workspaceCanvas.width = Math.round(width * pixelRatio);
+  workspaceCanvas.height = Math.round(height * pixelRatio);
+  context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  context.clearRect(0, 0, width, height);
+
+  const resolution = currentWorkspaceMap.resolution;
+  const cellWidth = width / resolution;
+  const cellHeight = height / resolution;
+  currentWorkspaceMap.cells.forEach((cell, index) => {
+    const row = Math.floor(index / resolution);
+    const column = index % resolution;
+    context.fillStyle = workspaceColor(cell.status);
+    context.fillRect(column * cellWidth, row * cellHeight, cellWidth + 0.7, cellHeight + 0.7);
+  });
+
+  context.strokeStyle = "rgba(255,255,255,0.28)";
+  context.lineWidth = 1;
+  context.beginPath();
+  context.moveTo(width / 2, 0);
+  context.lineTo(width / 2, height);
+  context.moveTo(0, height / 2);
+  context.lineTo(width, height / 2);
+  context.stroke();
+
+  if (currentPointAnalysis && Math.abs(currentPointAnalysis.point.z - currentWorkspaceMap.z) < 0.051) {
+    const markerX = (currentPointAnalysis.point.x / currentInstallation.width + 0.5) * width;
+    const markerY = (0.5 - currentPointAnalysis.point.y / currentInstallation.length) * height;
+    context.beginPath();
+    context.arc(markerX, markerY, 7, 0, Math.PI * 2);
+    context.fillStyle = "#ffffff";
+    context.fill();
+    context.strokeStyle = "#071018";
+    context.lineWidth = 3;
+    context.stroke();
+  }
+
+  context.fillStyle = "rgba(255,255,255,0.78)";
+  context.font = "700 11px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+  context.textBaseline = "top";
+  context.fillText("+Y", 8, 8);
+  context.textAlign = "right";
+  context.fillText("+X", width - 8, height / 2 + 8);
+  context.textAlign = "left";
+}
+
+function renderWorkspaceMap() {
+  if (!currentInstallation || !workspaceForm) return;
+  const result = calculateWorkspaceMap(currentInstallation, readWorkspaceValues());
+  currentWorkspaceMap = result;
+  setOutput(workspaceOutputs, "z", oneDecimal.format(result.z));
+  setOutput(
+    workspaceOutputs,
+    "staticFeasiblePercent",
+    oneDecimal.format(result.staticFeasiblePercent)
+  );
+  setOutput(
+    workspaceOutputs,
+    "operatingFeasiblePercent",
+    oneDecimal.format(result.operatingFeasiblePercent)
+  );
+  setOutput(workspaceOutputs, "loadCaseCount", wholeNumber.format(result.loadCaseCount));
+  workspaceError.hidden = true;
+  workspaceEmpty.hidden = true;
+  workspaceContent.hidden = false;
+  window.requestAnimationFrame(drawWorkspaceMap);
+}
+
 function renderPointAnalysis() {
   if (!currentInstallation) return;
   const analysis = calculatePointAnalysis(currentInstallation, readPointValues());
@@ -391,6 +508,7 @@ function renderPointAnalysis() {
   simulationContent.hidden = false;
   hasCalculatedPoint = true;
   window.requestAnimationFrame(drawSimulation);
+  if (currentWorkspaceMap) window.requestAnimationFrame(drawWorkspaceMap);
 }
 
 installationForm.addEventListener("submit", (event) => {
@@ -421,6 +539,7 @@ installationForm.addEventListener("reset", () => {
   window.requestAnimationFrame(() => {
     currentInstallation = null;
     currentPointAnalysis = null;
+    currentWorkspaceMap = null;
     hasCalculatedInstallation = false;
     hasCalculatedPoint = false;
     installationError.hidden = true;
@@ -430,6 +549,9 @@ installationForm.addEventListener("reset", () => {
     if (pointFieldset) pointFieldset.disabled = true;
     if (simulationContent) simulationContent.hidden = true;
     if (simulationEmpty) simulationEmpty.hidden = false;
+    if (workspaceFieldset) workspaceFieldset.disabled = true;
+    if (workspaceContent) workspaceContent.hidden = true;
+    if (workspaceEmpty) workspaceEmpty.hidden = false;
   });
 });
 
@@ -467,6 +589,61 @@ if (centerPositionButton) {
   centerPositionButton.addEventListener("click", useCenterReferencePosition);
 }
 
+if (workspaceForm) {
+  workspaceForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!workspaceForm.checkValidity()) {
+      workspaceError.hidden = false;
+      workspaceForm.reportValidity();
+      return;
+    }
+    try {
+      renderWorkspaceMap();
+    } catch (error) {
+      workspaceError.textContent =
+        error instanceof Error ? error.message : "맵 조건을 확인해 주세요.";
+      workspaceError.hidden = false;
+    }
+  });
+
+  workspaceForm.addEventListener("input", () => {
+    workspaceError.hidden = true;
+  });
+}
+
+if (usePointHeightButton) {
+  usePointHeightButton.addEventListener("click", () => {
+    if (!currentInstallation || !workspaceZ) return;
+    workspaceZ.value = currentPointAnalysis
+      ? currentPointAnalysis.point.z.toFixed(2)
+      : currentInstallation.referenceHeight75.toFixed(2);
+    try {
+      renderWorkspaceMap();
+    } catch (error) {
+      workspaceError.textContent = error instanceof Error ? error.message : "맵 조건을 확인해 주세요.";
+      workspaceError.hidden = false;
+    }
+  });
+}
+
+if (workspaceCanvas) {
+  workspaceCanvas.addEventListener("click", (event) => {
+    if (!currentInstallation || !currentWorkspaceMap || !pointX || !pointY || !pointZ) return;
+    const rect = workspaceCanvas.getBoundingClientRect();
+    const ratioX = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+    const ratioY = Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height));
+    pointX.value = (-currentInstallation.width / 2 + ratioX * currentInstallation.width).toFixed(2);
+    pointY.value = (currentInstallation.length / 2 - ratioY * currentInstallation.length).toFixed(2);
+    pointZ.value = currentWorkspaceMap.z.toFixed(2);
+    try {
+      renderPointAnalysis();
+    } catch (error) {
+      pointError.textContent = error instanceof Error ? error.message : "좌표를 확인해 주세요.";
+      pointError.hidden = false;
+    }
+  });
+}
+
 if (simulationCanvas && "ResizeObserver" in window) {
   new ResizeObserver(() => {
     if (currentPointAnalysis) window.requestAnimationFrame(drawSimulation);
@@ -474,5 +651,15 @@ if (simulationCanvas && "ResizeObserver" in window) {
 } else if (simulationCanvas) {
   window.addEventListener("resize", () => {
     if (currentPointAnalysis) window.requestAnimationFrame(drawSimulation);
+  });
+}
+
+if (workspaceCanvas && "ResizeObserver" in window) {
+  new ResizeObserver(() => {
+    if (currentWorkspaceMap) window.requestAnimationFrame(drawWorkspaceMap);
+  }).observe(workspaceCanvas);
+} else if (workspaceCanvas) {
+  window.addEventListener("resize", () => {
+    if (currentWorkspaceMap) window.requestAnimationFrame(drawWorkspaceMap);
   });
 }
