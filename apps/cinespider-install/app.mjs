@@ -2,7 +2,7 @@ import {
   calculateInstallation,
   calculatePointAnalysis,
   CRITERIA
-} from "./calculation.mjs";
+} from "./calculation.mjs?v=20260819-angle1";
 
 const installationForm = document.querySelector("#installation-form");
 const installationError = document.querySelector("#form-error");
