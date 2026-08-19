@@ -1,6 +1,5 @@
 export const CRITERIA = Object.freeze({
   heightRatioReference: 0.75,
-  comparisonCableAngleDeg: 30,
   cablePlanningReserveRate: 0.10,
   cableRoundingIncrement: 0.5,
   gravity: 9.80665
@@ -145,11 +144,6 @@ export function calculateInstallation({ width, length, pulleyHeight, payloadMass
   const referenceAngle75Deg = referenceAngle75Rad * 180 / Math.PI;
   const staticTensionAt75KgF = payloadMass / (4 * Math.sin(referenceAngle75Rad));
 
-  const comparisonAngleRad = CRITERIA.comparisonCableAngleDeg * Math.PI / 180;
-  const conservativeHeight30Raw =
-    pulleyHeight - centerRadius * Math.tan(comparisonAngleRad);
-  const conservativeHeight30 = Math.max(0, conservativeHeight30Raw);
-
   return Object.freeze({
     width,
     length,
@@ -161,12 +155,11 @@ export function calculateInstallation({ width, length, pulleyHeight, payloadMass
     minimumCableLength,
     planningCableLength,
     referenceHeight75,
+    referenceDrop75,
     referenceAngle75Deg,
+    referenceVerticalComplementDeg: 90 - referenceAngle75Deg,
     staticTensionAt75KgF,
-    staticTensionAt75N: staticTensionAt75KgF * CRITERIA.gravity,
-    conservativeHeight30,
-    conservativeHeight30Raw,
-    conservativeHeight30Available: conservativeHeight30Raw > 0
+    staticTensionAt75N: staticTensionAt75KgF * CRITERIA.gravity
   });
 }
 

@@ -124,7 +124,7 @@
           <article class="primary-result primary-result--height">
             <p>75% 기준 참고 높이</p>
             <strong><span data-output="referenceHeight75">-</span><small>m</small></strong>
-            <span>운용 최대치가 아닌 초기 검토용 높이 · 중앙 각도 <b data-output="referenceAngle75Deg">-</b>°</span>
+            <span>천장면과 와이어 <b data-output="referenceAngle75Deg">-</b>° · 수직선과 <b data-output="referenceVerticalComplementDeg">-</b>°</span>
           </article>
 
           <dl class="metric-list">
@@ -137,8 +137,8 @@
               <dd><span data-output="floorDiagonal">-</span> m</dd>
             </div>
             <div>
-              <dt>30° 비교선의 중앙 높이</dt>
-              <dd><span data-output="conservativeHeight30">-</span></dd>
+              <dt>75% 위치의 도르래 수직 낙차</dt>
+              <dd><span data-output="referenceDrop75">-</span> m</dd>
             </div>
             <div>
               <dt>75% 중앙 위치의 1가닥 균등 정적 분배값</dt>
@@ -234,7 +234,7 @@
             </div>
             <dl>
               <div>
-                <dt>가장 낮은 케이블 각도</dt>
+                <dt>천장면 기준 최소 케이블 각도</dt>
                 <dd><span data-point-output="minimumCableAngleDeg">-</span>°</dd>
               </div>
               <div>
@@ -261,7 +261,7 @@
                 <th scope="col">축</th>
                 <th scope="col">도르래→페이로드</th>
                 <th scope="col">총 사용 길이</th>
-                <th scope="col">수평 기준 각도</th>
+                <th scope="col">천장면 기준 각도</th>
                 <th scope="col">최소노름 정적 장력</th>
               </tr>
             </thead>
@@ -279,11 +279,11 @@
     <section class="method-section" aria-labelledby="method-title">
       <div class="method-intro">
         <p class="step-label">05 · METHOD</p>
-        <h2 id="method-title">75%와 30°를 분리해서 보는 이유</h2>
+        <h2 id="method-title">천장면 기준 각도와 장력의 관계</h2>
         <p>
           케이블 로봇의 실제 작업영역은 공간 크기뿐 아니라 케이블 장력 범위,
           프리텐션, 강성, 동적 하중과 위치에 따라 달라집니다. 따라서 도르래 높이의
-          일정 비율이나 케이블 각도 하나로 안전한 작업영역을 확정할 수 없습니다.
+          일정 비율이나 임의의 각도 하나로 안전한 작업영역을 확정할 수 없습니다.
         </p>
       </div>
 
@@ -298,10 +298,10 @@
         </article>
         <article>
           <span>ANGLE</span>
-          <h3>30°는 비교선</h3>
+          <h3>천장면이 0° 기준</h3>
           <p>
-            각도는 케이블과 수평면 사이의 각으로 0°에 가까울수록 같은 무게를 지지하는 데
-            더 큰 장력이 필요합니다. 30°는 안전규정이 아니라 차이를 보여주기 위한 보수적 비교선입니다.
+            도르래가 같은 높이에 있을 때 천장면과 와이어 사이의 각도를 표시합니다.
+            0°에 가까울수록 와이어가 천장과 평행해지고 중력을 지지하는 데 더 큰 장력이 필요합니다.
           </p>
         </article>
         <article>

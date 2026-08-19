@@ -85,21 +85,12 @@ function setOutput(map, name, value) {
 
 function updateHeightAssessment(result) {
   heightAssessment.className = "assessment";
-
-  if (result.referenceAngle75Deg < CRITERIA.comparisonCableAngleDeg) {
-    heightAssessment.classList.add("assessment--caution");
-    assessmentTitle.textContent = "75% 높이는 가능 여부를 추가 검토해야 하는 위치입니다.";
-    assessmentCopy.textContent =
-      `이 위치의 케이블 각도는 수평면 기준 ${oneDecimal.format(result.referenceAngle75Deg)}°입니다. ` +
-      `30°는 안전기준이 아닌 비교선이며, 실제 운용 가능 여부는 장비별 허용 장력과 프리텐션·동적 하중으로 판단해야 합니다.`;
-    return;
-  }
-
-  heightAssessment.classList.add("assessment--ok");
-  assessmentTitle.textContent = "75% 위치가 30° 비교선보다 완만하지 않은 형상입니다.";
+  heightAssessment.classList.add("assessment--caution");
+  assessmentTitle.textContent =
+    `천장면과 와이어 사이의 각도는 ${oneDecimal.format(result.referenceAngle75Deg)}°입니다.`;
   assessmentCopy.textContent =
-    `수평면 기준 각도는 ${oneDecimal.format(result.referenceAngle75Deg)}°입니다. ` +
-    "이 결과만으로 안전하거나 실제 운용 가능하다고 확정할 수는 없습니다.";
+    `중앙에서 도르래까지 수평거리 ${oneDecimal.format(result.centerRadius)}m, 수직 낙차 ${oneDecimal.format(result.referenceDrop75)}m로 계산했습니다. ` +
+    `수직선과의 각도는 ${oneDecimal.format(result.referenceVerticalComplementDeg)}°이며, 특정 각도를 통과·실패 기준으로 사용하지 않습니다.`;
 }
 
 function configurePointInputs(result) {
@@ -137,15 +128,14 @@ function renderInstallationResult() {
   setOutput(outputs, "minimumCableLength", oneDecimal.format(result.minimumCableLength));
   setOutput(outputs, "referenceHeight75", oneDecimal.format(result.referenceHeight75));
   setOutput(outputs, "referenceAngle75Deg", oneDecimal.format(result.referenceAngle75Deg));
-  setOutput(outputs, "maxFreeSpan", oneDecimal.format(result.maxFreeSpan));
-  setOutput(outputs, "floorDiagonal", oneDecimal.format(result.floorDiagonal));
   setOutput(
     outputs,
-    "conservativeHeight30",
-    result.conservativeHeight30Available
-      ? `${oneDecimal.format(result.conservativeHeight30)} m`
-      : "공간 내 확보 불가"
+    "referenceVerticalComplementDeg",
+    oneDecimal.format(result.referenceVerticalComplementDeg)
   );
+  setOutput(outputs, "referenceDrop75", oneDecimal.format(result.referenceDrop75));
+  setOutput(outputs, "maxFreeSpan", oneDecimal.format(result.maxFreeSpan));
+  setOutput(outputs, "floorDiagonal", oneDecimal.format(result.floorDiagonal));
   setOutput(
     outputs,
     "staticTensionAt75KgF",
